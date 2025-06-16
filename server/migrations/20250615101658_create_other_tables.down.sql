@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS service_maintenance;
+DROP TABLE IF EXISTS incident_comment;
+DROP TABLE IF EXISTS service_log;
+DROP TABLE IF EXISTS incidents;
+DROP TABLE IF EXISTS members;
+DROP TABLE IF EXISTS services;
+DROP TABLE IF EXISTS organisations;
+DROP TABLE IF EXISTS users;
