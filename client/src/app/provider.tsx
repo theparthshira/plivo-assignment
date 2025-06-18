@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import { Provider } from "react-redux";
 import { persistor, store } from "../redux/store";
 import { PersistGate } from "redux-persist/integration/react";
+import { WebSocketProvider } from "../lib/socket";
 
 type AppProviderProps = {
   children: React.ReactNode;
@@ -23,7 +24,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-            {children}
+            <WebSocketProvider>{children}</WebSocketProvider>
           </ClerkProvider>
         </PersistGate>
       </Provider>

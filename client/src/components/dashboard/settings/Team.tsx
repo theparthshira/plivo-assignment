@@ -24,29 +24,9 @@ import {
 import type { MembersList } from "../../../types/organisation";
 import { formatDate } from "../../../utils/date";
 import TeamForm from "./TeamForm";
-
-export const columns: ColumnDef<MembersList>[] = [
-  {
-    id: "email",
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => <div>{row.original.Email}</div>,
-  },
-  {
-    accessorKey: "member_type",
-    header: "Member role",
-    cell: ({ row }) => <div>{row.original.MemberType}</div>,
-  },
-  {
-    accessorKey: "created_at",
-    header: "Created",
-    cell: ({ row }) => {
-      const formattedDate = formatDate(row.original.CreatedAt);
-
-      return <div>{formattedDate}</div>;
-    },
-  },
-];
+import { Trash2 } from "lucide-react";
+import DeleteMemberDialog from "./DeleteServiceDialog";
+import { UpdateTeamRoleText } from "../../../utils/constant";
 
 const TeamSetting = () => {
   const { teamMembers, currentMember } = useAppSelector(
@@ -57,6 +37,49 @@ const TeamSetting = () => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+
+  const columns: ColumnDef<MembersList>[] = [
+    {
+      id: "email",
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => <div>{row.original.Email}</div>,
+    },
+    {
+      accessorKey: "member_type",
+      header: "Member role",
+      cell: ({ row }) => (
+        <div>
+          {UpdateTeamRoleText(row.original.MemberType as "ADMIN" | "MANAGER")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "created_at",
+      header: "Created",
+      cell: ({ row }) => {
+        const formattedDate = formatDate(row.original.CreatedAt);
+
+        return <div>{formattedDate}</div>;
+      },
+    },
+  ];
+
+  if (currentMember?.member_type === "ADMIN") {
+    columns.push({
+      accessorKey: "delete",
+      header: "Delete user",
+      cell: ({ row }) => {
+        const user_id = row.original.ID;
+
+        return (
+          <DeleteMemberDialog id={user_id}>
+            <Trash2 className="cursor-pointer" />
+          </DeleteMemberDialog>
+        );
+      },
+    });
+  }
 
   const table = useReactTable({
     data: teamMembers || [],

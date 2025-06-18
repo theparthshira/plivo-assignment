@@ -2,16 +2,19 @@ package service
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/theparthshira/plivo-assignment/internal/models"
+	"github.com/theparthshira/plivo-assignment/internal/socket"
 )
 
 type ServiceService interface {
 	GetAllServicesByOrgID(org_id int) ([]models.Services, error)
 	CreateService(service *models.Services) error
 	UpdateService(service *models.Services) error
-	DeleteService(service_id int) error
+	DeleteService(service_id int, org_id int) error
 	CreateServiceMaintenance(maintenance *models.ServiceMaintenance) error
 	GetAllServiceMaintenanceByServiceID(service_id int) ([]models.ServiceMaintenance, error)
 	DeleteServiceMaintenance(maintenance_id int) error
@@ -20,11 +23,15 @@ type ServiceService interface {
 }
 
 type mysqlServiceService struct {
-	db *sql.DB
+	db        *sql.DB
+	wsManager *socket.Manager
 }
 
-func NewMySQLServiceService(db *sql.DB) ServiceService {
-	return &mysqlServiceService{db: db}
+func NewMySQLServiceService(db *sql.DB, wsManager *socket.Manager) ServiceService {
+	return &mysqlServiceService{
+		db:        db,
+		wsManager: wsManager,
+	}
 }
 
 func (r *mysqlServiceService) GetAllServicesByOrgID(org_id int) ([]models.Services, error) {
@@ -74,6 +81,21 @@ func (r *mysqlServiceService) CreateService(service *models.Services) error {
 		return fmt.Errorf("error getting last insert ID: %w", err)
 	}
 
+	socketMessage := struct {
+		Type string
+	}{
+		Type: "refetch",
+	}
+
+	eventBytes, err := json.Marshal(socketMessage)
+
+	if err != nil {
+		fmt.Errorf("Failed to marshal event data")
+		return nil
+	}
+
+	r.wsManager.SendEventToOrg(strconv.Itoa(service.OrgID), eventBytes)
+
 	service.ID = int(lastInsertID)
 	return nil
 }
@@ -82,23 +104,73 @@ func (r *mysqlServiceService) UpdateService(service *models.Services) error {
 	query := "UPDATE services SET name = ?, service_type = ?, service_status = ? WHERE id = ?"
 	_, err := r.db.Exec(query, service.Name, service.ServiceType, service.ServiceStatus, service.ID)
 
+	if err != nil {
+		return fmt.Errorf("error updating user: %w", err)
+	}
+
 	query = "INSERT INTO service_log (service_id, service_status) VALUES (?, ?)"
-	_, err = r.db.Exec(query, service.ID, service.ServiceStatus)
+	result, err := r.db.Exec(query, service.ID, service.ServiceStatus)
 
 	if err != nil {
 		return fmt.Errorf("error updating user: %w", err)
 	}
 
+	lastInsertID, err := result.LastInsertId()
+
+	if err != nil {
+		return fmt.Errorf("error updating user: %w", err)
+	}
+
+	fmt.Println("Testing service log", service.OrgID)
+
+	socketMessage := struct {
+		Type          string
+		ServiceID     int
+		ServiceStatus string
+		ServiceType   string
+		LogID         int
+	}{
+		Type:          "data",
+		ServiceStatus: service.ServiceStatus,
+		ServiceType:   service.ServiceType,
+		ServiceID:     service.ID,
+		LogID:         int(lastInsertID),
+	}
+
+	eventBytes, err := json.Marshal(socketMessage)
+
+	if err != nil {
+		fmt.Errorf("Failed to marshal event data")
+		return nil
+	}
+
+	r.wsManager.SendEventToOrg(strconv.Itoa(service.OrgID), eventBytes)
+
 	return nil
 }
 
-func (r *mysqlServiceService) DeleteService(service_id int) error {
+func (r *mysqlServiceService) DeleteService(service_id int, org_id int) error {
 	query := "DELETE FROM services WHERE id = ?"
 	_, err := r.db.Exec(query, service_id)
 
 	if err != nil {
 		return fmt.Errorf("error updating user: %w", err)
 	}
+
+	socketMessage := struct {
+		Type string
+	}{
+		Type: "refetch",
+	}
+
+	eventBytes, err := json.Marshal(socketMessage)
+
+	if err != nil {
+		fmt.Errorf("Failed to marshal event data")
+		return nil
+	}
+
+	r.wsManager.SendEventToOrg(strconv.Itoa(org_id), eventBytes)
 
 	return nil
 }
@@ -179,7 +251,7 @@ func (r *mysqlServiceService) GetServiceByID(id int) (*models.Services, error) {
 }
 
 func (r *mysqlServiceService) GetServiceLogByID(id int) ([]models.ServiceLog, error) {
-	query := "SELECT * FROM service_log WHERE service_id = ?"
+	query := "SELECT * FROM service_log WHERE service_id = ? ORDER BY ID DESC"
 	rows, err := r.db.Query(query, id)
 
 	if err != nil {

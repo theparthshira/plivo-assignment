@@ -1,6 +1,6 @@
 import { Check, Activity, FileText, CircleX } from "lucide-react";
 import { Card, CardContent } from "../../components/ui/card";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getServiceDetails, getServices } from "../../redux/service";
 import { useAppDispatch, useAppSelector } from "../../lib/reduxHook";
 import {
@@ -16,6 +16,13 @@ import IncidentForm from "../../components/dashboard/incidents/IncidentForm";
 import { Button } from "../../components/ui/button";
 import { getServiceIncident } from "../../redux/incident";
 import { useNavigate } from "react-router";
+import { useWebSocket } from "../../lib/socket";
+import {
+  IncidentStatusTag,
+  ServiceStatusTag,
+  updateServiceType,
+} from "../../lib/tags";
+import type { ServiceKey, StatusKey } from "../../utils/constant";
 
 const currentDate = new Date().toLocaleString("en-US", {
   month: "short",
@@ -29,9 +36,17 @@ const currentDate = new Date().toLocaleString("en-US", {
 export default function Clientequest() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const {
+    messages: socketMessages,
+    connectWebSocket,
+    removeReadMessage,
+  } = useWebSocket();
 
   const { serviceDetail } = useAppSelector((state) => state.service);
   const { serviceIncidents } = useAppSelector((state) => state.incident);
+
+  const [currentServiceDetail, setCurrentServiceDetail] =
+    useState(serviceDetail);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -41,6 +56,7 @@ export default function Clientequest() {
     dispatch(getServiceDetails(service_id));
     dispatch(getServices(org_id));
     dispatch(getServiceIncident(service_id));
+    connectWebSocket(org_id);
   }, []);
 
   const handleIncident = (id: number) => {
@@ -50,16 +66,61 @@ export default function Clientequest() {
     navigate(`/incident?service=${id}&org=${org_id}&incident=${id}`);
   };
 
+  useEffect(() => {
+    const lastMessage = socketMessages[socketMessages?.length - 1];
+
+    if (currentServiceDetail?.Service?.id === lastMessage?.ServiceID) {
+      const logClone = Array.from(currentServiceDetail?.Logs || []);
+
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const localIsoString = `${now.getFullYear()}-${pad(
+        now.getMonth() + 1
+      )}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(
+        now.getMinutes()
+      )}:${pad(now.getSeconds())}Z`;
+
+      logClone.unshift({
+        id: lastMessage?.LogID,
+        service_id: currentServiceDetail?.Service?.id || 0,
+        service_status: lastMessage?.ServiceStatus,
+        created_at: localIsoString,
+      });
+
+      const serviceClone = structuredClone(currentServiceDetail.Service);
+
+      if (serviceClone) {
+        serviceClone.service_status = lastMessage?.ServiceStatus;
+      }
+
+      setCurrentServiceDetail((state) => ({
+        ...state,
+        Logs: logClone,
+        Service: serviceClone,
+      }));
+
+      removeReadMessage(lastMessage?.id);
+    }
+  }, [socketMessages]);
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex text-center md:text-left justify-between">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Service:{" "}
             {/* <span className="underline">{currentOrganisation?.name}</span> */}
-            <span className="underline">{serviceDetail?.Service?.name}</span>
-          </h1>
+            <span className="underline">
+              {currentServiceDetail?.Service?.name}
+            </span>
+            <p className="text-gray-600 text-sm sm:text-base">
+              Type:{"  "}
+              {updateServiceType(
+                currentServiceDetail?.Service?.service_type as ServiceKey
+              )}
+            </p>
+          </div>
           <IncidentForm>
             <Button className="bg-gray-900 hover:bg-gray-800 text-white self-start sm:self-auto">
               Create Incident
@@ -72,7 +133,8 @@ export default function Clientequest() {
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3">
-                {serviceDetail?.Service?.service_status === "OPERATIONAL" ? (
+                {currentServiceDetail?.Service?.service_status ===
+                "OPERATIONAL" ? (
                   <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
                     <Check className="w-5 h-5 text-green-600" />
                   </div>
@@ -81,9 +143,12 @@ export default function Clientequest() {
                     <CircleX className="w-5 h-5 text-red-600" />
                   </div>
                 )}
-                <span className="text-lg font-semibold text-gray-900">
-                  {serviceDetail?.Service?.service_status}
-                </span>
+
+                <ServiceStatusTag
+                  status={
+                    currentServiceDetail?.Service?.service_status as StatusKey
+                  }
+                />
               </div>
               <div className="text-sm text-gray-500 sm:text-right">
                 {currentDate}
@@ -94,8 +159,9 @@ export default function Clientequest() {
 
         {/* Monitors Section */}
         <Card className="shadow-sm">
-          <CardContent className="p-8 md:p-12">
-            {serviceDetail?.Logs && serviceDetail?.Logs?.length > 0 ? (
+          <CardContent className="p-8 md:p-12 max-h-96 overflow-auto">
+            {currentServiceDetail?.Logs &&
+            currentServiceDetail?.Logs?.length > 0 ? (
               <div className="space-y-4">
                 <Table>
                   <TableHeader>
@@ -108,11 +174,15 @@ export default function Clientequest() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {serviceDetail?.Logs?.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell>#{log.id}</TableCell>
-                        <TableCell>{log.service_status}</TableCell>
-                        <TableCell>{log.created_at}</TableCell>
+                    {currentServiceDetail?.Logs?.map((log) => (
+                      <TableRow key={log?.id}>
+                        <TableCell>#{log?.id}</TableCell>
+                        <TableCell>
+                          <ServiceStatusTag
+                            status={log?.service_status as StatusKey}
+                          />
+                        </TableCell>
+                        <TableCell>{log?.created_at}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -138,9 +208,9 @@ export default function Clientequest() {
 
         {/* Recent Notices Section */}
         <Card className="shadow-sm">
-          <CardContent className="p-8 md:p-12">
-            {serviceDetail?.Maintenances &&
-            serviceDetail?.Maintenances?.length > 0 ? (
+          <CardContent className="p-8 md:p-12 max-h-96 overflow-auto">
+            {currentServiceDetail?.Maintenances &&
+            currentServiceDetail?.Maintenances?.length > 0 ? (
               <div className="space-y-4">
                 <Table>
                   <TableHeader>
@@ -153,7 +223,7 @@ export default function Clientequest() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {serviceDetail?.Logs?.map((log) => (
+                    {currentServiceDetail?.Logs?.map((log) => (
                       <TableRow key={log.id}>
                         <TableCell>#{log.id}</TableCell>
                         <TableCell>{log.service_status}</TableCell>
@@ -182,7 +252,7 @@ export default function Clientequest() {
         </Card>
 
         <Card className="shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-8 md:p-12 max-h-96 overflow-auto">
             <Table>
               <TableCaption>Click on status to update it.</TableCaption>
               <TableHeader>
@@ -203,7 +273,11 @@ export default function Clientequest() {
                     <TableCell>
                       S#{incident.service_id} {incident.description}
                     </TableCell>
-                    <TableCell>{incident.incident_status}</TableCell>
+                    <TableCell>
+                      <IncidentStatusTag
+                        status={incident.incident_status || ""}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

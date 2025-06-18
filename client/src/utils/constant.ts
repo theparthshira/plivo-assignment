@@ -1,5 +1,9 @@
 import { Settings, Users } from "lucide-react";
 
+export type RoleKey = keyof typeof ROLE_MAP;
+export type StatusKey = keyof typeof STATUS_MAP;
+export type ServiceKey = keyof typeof SERVICE_MAP;
+
 export const SERVICE_TYPES = [
   { value: "SERVICE", label: "Web Service" },
   { value: "SOCKET", label: "Socket" },
@@ -39,3 +43,12 @@ export const TEAM_ROLE = [
   { value: "ADMIN", label: "Admin" },
   { value: "MANAGER", label: "Manager" },
 ];
+
+export const ROLE_MAP = {
+  ADMIN: "Admin",
+  MANAGER: "Manager",
+};
+
+export const UpdateTeamRoleText = (key: RoleKey) => {
+  return ROLE_MAP[key];
+};

@@ -61,7 +61,6 @@ const TeamForm = ({ children }: TeamFormProps) => {
   const dispatch = useAppDispatch();
 
   const { currentOrganisation } = useAppSelector((state) => state.organisation);
-  const { services } = useAppSelector((state) => state.service);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

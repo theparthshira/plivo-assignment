@@ -34,6 +34,8 @@ import type { IService } from "../../../types/service";
 import DeleteServiceDialog from "./DeleteServiceDialog";
 import UpdateServiceDialog from "./UpdateServiceDialog";
 import { useAppSelector } from "../../../lib/reduxHook";
+import { ServiceStatusTag, updateServiceType } from "../../../lib/tags";
+import type { ServiceKey, StatusKey } from "../../../utils/constant";
 
 const DataTable = () => {
   const { services } = useAppSelector((state) => state.service);
@@ -54,12 +56,18 @@ const DataTable = () => {
     {
       accessorKey: "service_type",
       header: "Service Type",
-      cell: ({ row }) => <div>{row.original.service_type}</div>,
+      cell: ({ row }) => (
+        <div className="capitalize ">
+          {updateServiceType(row.original.service_type as ServiceKey)}
+        </div>
+      ),
     },
     {
       accessorKey: "service_status",
       header: "Status",
-      cell: ({ row }) => <div>{row.original.service_status}</div>,
+      cell: ({ row }) => (
+        <ServiceStatusTag status={row.original.service_status as StatusKey} />
+      ),
     },
     {
       accessorKey: "action",

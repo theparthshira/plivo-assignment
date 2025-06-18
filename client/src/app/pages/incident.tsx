@@ -16,6 +16,7 @@ import {
   getIncidentDetail,
 } from "../../redux/incident";
 import { formatDate } from "../../utils/date";
+import { IncidentStatusTag } from "../../lib/tags";
 
 const Incident = () => {
   const dispatch = useAppDispatch();
@@ -67,7 +68,8 @@ const Incident = () => {
             S#{incidentDetail?.service_id} {incidentDetail?.description}
           </h1>
           <p className="text-gray-600 text-sm sm:text-base">
-            Status: {incidentDetail?.incident_status}
+            Status:{"   "}
+            <IncidentStatusTag status={incidentDetail?.incident_status || ""} />
           </p>
         </div>
       </div>

@@ -22,8 +22,9 @@ export const deleteService = createAsyncThunk(
   "admin/delete-service",
   async (data: any) => {
     const response = axiosMiddleware.request({
-      url: `/v1/admin/delete-service/${data}`,
+      url: `/v1/admin/delete-service/${data?.id}`,
       method: "DELETE",
+      data: data,
       headers: {
         "Content-Type": "application/json",
       },

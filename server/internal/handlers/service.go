@@ -96,6 +96,7 @@ func (h *ServiceHandler) UpdateServiceHandler(w http.ResponseWriter, r *http.Req
 		Name          string
 		ServiceType   string
 		ServiceStatus string
+		OrgID         int
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -113,6 +114,7 @@ func (h *ServiceHandler) UpdateServiceHandler(w http.ResponseWriter, r *http.Req
 		ServiceType:   req.ServiceType,
 		ServiceStatus: req.ServiceStatus,
 		ID:            id,
+		OrgID:         req.OrgID,
 	}
 
 	if err := h.serviceService.UpdateService(updateService); err != nil {
@@ -140,7 +142,21 @@ func (h *ServiceHandler) DeleteServiceHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := h.serviceService.DeleteService(id); err != nil {
+	var req struct {
+		OrgID int
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.OrgID <= 0 {
+		http.Error(w, "OrgID is required for creating organisation", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.serviceService.DeleteService(id, req.OrgID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

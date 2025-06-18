@@ -7,39 +7,36 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "../../../components/ui/dialog";
 import { useState } from "react";
 import { Button } from "../../ui/button";
 import { Loader2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../../lib/reduxHook";
-import { deleteService, getServices } from "../../../redux/service";
+import { deleteMember, getMembers } from "../../../redux/member";
 
-const DeleteServiceDialog = ({
+const DeleteMemberDialog = ({
   id,
-  isDeleteOpen,
-  setIsDeleteOpen,
+  children,
 }: {
   id: number;
-  isDeleteOpen: boolean;
-  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  children: React.ReactNode;
 }) => {
   const dispatch = useAppDispatch();
 
   const { currentOrganisation } = useAppSelector((state) => state.organisation);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const handleDelete = async () => {
     setIsLoading(true);
     try {
-      await dispatch(deleteService({ id, OrgID: currentOrganisation?.id }));
+      await dispatch(deleteMember(id));
     } catch (err) {
       console.log("err =====", err);
     } finally {
-      const queryParams = new URLSearchParams(location.search);
-      const id = queryParams.get("org") || "0";
-
-      dispatch(getServices(id));
+      dispatch(getMembers(currentOrganisation?.id));
       setIsDeleteOpen(false);
       setIsLoading(false);
     }
@@ -47,6 +44,7 @@ const DeleteServiceDialog = ({
 
   return (
     <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <DialogTrigger>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create new service</DialogTitle>
@@ -76,4 +74,4 @@ const DeleteServiceDialog = ({
   );
 };
 
-export default DeleteServiceDialog;
+export default DeleteMemberDialog;

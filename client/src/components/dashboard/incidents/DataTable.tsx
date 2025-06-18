@@ -12,6 +12,7 @@ import { useAppDispatch, useAppSelector } from "../../../lib/reduxHook";
 import { Card, CardContent } from "../../ui/card";
 import { getAllIncidents, updateIncident } from "../../../redux/incident";
 import { useNavigate } from "react-router";
+import { IncidentStatusTag } from "../../../lib/tags";
 
 const DataTable = () => {
   const dispatch = useAppDispatch();
@@ -68,7 +69,7 @@ const DataTable = () => {
                     S#{incident.service_id} {incident.description}
                   </TableCell>
                   <TableCell
-                    className="cursor-pointer"
+                    className="cursor-pointer capitalize-text"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -79,7 +80,9 @@ const DataTable = () => {
                       );
                     }}
                   >
-                    {incident.incident_status}
+                    <IncidentStatusTag
+                      status={incident.incident_status || ""}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

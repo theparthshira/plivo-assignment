@@ -8,20 +8,30 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../lib/reduxHook";
 import { getServices } from "../../redux/service";
 import { useNavigate } from "react-router";
 import { getOrganisation } from "../../redux/organisation";
 import IncidentForm from "../../components/dashboard/incidents/IncidentForm";
 import { Button } from "../../components/ui/button";
+import { useWebSocket } from "../../lib/socket";
+import { ServiceStatusTag, updateServiceType } from "../../lib/tags";
+import type { ServiceKey, StatusKey } from "../../utils/constant";
 
 export default function ClientHome() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const {
+    messages: socketMessages,
+    connectWebSocket,
+    removeReadMessage,
+  } = useWebSocket();
 
   const { services } = useAppSelector((state) => state.service);
   const { currentOrganisation } = useAppSelector((state) => state.organisation);
+
+  const [currentServices, setCurrentServices] = useState(services);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -29,13 +39,44 @@ export default function ClientHome() {
 
     dispatch(getServices(org_id));
     dispatch(getOrganisation(org_id));
+    connectWebSocket(org_id);
   }, []);
+
+  useEffect(() => {
+    setCurrentServices(services);
+  }, [services]);
+
+  useEffect(() => {
+    const lastMessage = socketMessages[socketMessages?.length - 1];
+
+    if (lastMessage?.Type === "data") {
+      const servicesClone = Array.from(currentServices || []).map((service) => {
+        console.log("service.id =====", service.id);
+        console.log("lastMessage?.ServiceID =====", lastMessage?.ServiceID);
+
+        if (service.id === lastMessage?.ServiceID) {
+          return {
+            ...service,
+            service_status: lastMessage?.ServiceStatus,
+            service_type: lastMessage?.ServiceType,
+          };
+        } else {
+          return service;
+        }
+      });
+
+      setCurrentServices(servicesClone);
+      removeReadMessage(lastMessage?.id);
+    } else {
+      dispatch(getServices(currentOrganisation?.id));
+    }
+  }, [socketMessages]);
 
   const handleService = (id: number) => {
     const queryParams = new URLSearchParams(location.search);
     const org_id = queryParams.get("org") || "0";
 
-    navigate(`/client/request?service=${id}&org=${org_id}`);
+    window.location.href = `/client/request?service=${id}&org=${org_id}`;
   };
 
   return (
@@ -66,7 +107,7 @@ export default function ClientHome() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {services?.map((service) => (
+                {currentServices?.map((service) => (
                   <TableRow
                     key={service.id}
                     className="cursor-pointer"
@@ -75,8 +116,14 @@ export default function ClientHome() {
                     <TableCell className="font-medium">
                       {service.name}
                     </TableCell>
-                    <TableCell>{service.service_type}</TableCell>
-                    <TableCell>{service.service_status}</TableCell>
+                    <TableCell>
+                      {updateServiceType(service.service_type as ServiceKey)}
+                    </TableCell>
+                    <TableCell>
+                      <ServiceStatusTag
+                        status={service.service_status as StatusKey}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

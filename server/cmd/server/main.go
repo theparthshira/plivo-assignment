@@ -15,6 +15,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/theparthshira/plivo-assignment/internal/api"
 	"github.com/theparthshira/plivo-assignment/internal/db"
+	"github.com/theparthshira/plivo-assignment/internal/socket"
 )
 
 func main() {
@@ -33,6 +34,9 @@ func main() {
 
 	defer db.CloseDB()
 
+	wsManager := socket.NewManager()
+	go wsManager.Run()
+
 	// Initialize a new Gorilla Mux router
 	r := mux.NewRouter()
 
@@ -46,7 +50,7 @@ func main() {
 
 	handler := c.Handler(r)
 
-	api.RegisterAdminAPIRoutes(r, DB)
+	api.RegisterAdminAPIRoutes(r, DB, wsManager)
 	api.RegisterClientAPIRoutes(r, DB)
 
 	// Configure the HTTP server

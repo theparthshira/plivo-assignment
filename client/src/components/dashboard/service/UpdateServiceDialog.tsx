@@ -83,6 +83,7 @@ const UpdateServiceDialog = ({
           Name: data?.name,
           ServiceType: data?.type,
           ServiceStatus: data?.status,
+          OrgID: service?.org_id,
         })
       );
     } catch (err) {

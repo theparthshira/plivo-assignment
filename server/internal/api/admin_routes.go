@@ -3,13 +3,15 @@ package api
 
 import (
 	"database/sql"
+	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/theparthshira/plivo-assignment/internal/handlers"
 	"github.com/theparthshira/plivo-assignment/internal/service"
+	"github.com/theparthshira/plivo-assignment/internal/socket"
 )
 
-func RegisterAdminAPIRoutes(router *mux.Router, db *sql.DB) {
+func RegisterAdminAPIRoutes(router *mux.Router, db *sql.DB, wsManager *socket.Manager) {
 	authenticatedRouter := router.PathPrefix("/v1/admin").Subrouter()
 	// authenticatedRouter.Use(clerkhttp.RequireHeaderAuthorization())
 
@@ -19,7 +21,7 @@ func RegisterAdminAPIRoutes(router *mux.Router, db *sql.DB) {
 	organisationService := service.NewMySQLOrganisationService(db)
 	organisationHandler := handlers.NewOrganisationHandler(organisationService)
 
-	serviceService := service.NewMySQLServiceService(db)
+	serviceService := service.NewMySQLServiceService(db, wsManager)
 	serviceHandler := handlers.NewServiceHandler(serviceService)
 
 	memberService := service.NewMySQLMemberService(db)
@@ -27,6 +29,16 @@ func RegisterAdminAPIRoutes(router *mux.Router, db *sql.DB) {
 
 	incidentService := service.NewMySQLIncidentService(db)
 	incidentHandler := handlers.NewIncidentHandler(incidentService)
+
+	router.HandleFunc("/ws/{orgID}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		orgID := vars["orgID"]
+		if orgID == "" {
+			http.Error(w, "Organization ID missing", http.StatusBadRequest)
+			return
+		}
+		wsManager.ServeWs(w, r, orgID)
+	})
 
 	authenticatedRouter.HandleFunc("/signin", userHandler.SignInHandler).Methods("POST")
 	authenticatedRouter.HandleFunc("/get-user-organisation/{id}", userHandler.GetUserOrganisationsHandler).Methods("GET")

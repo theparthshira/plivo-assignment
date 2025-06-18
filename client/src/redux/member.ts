@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosMiddleware from "../lib/axios";
 import type { MembersList } from "../types/organisation";
 import type { IMember } from "../types/user";
-import { nl } from "zod/v4/locales";
 
 export const getMembers = createAsyncThunk(
   "admin/get-organisation-members",
@@ -42,6 +41,21 @@ export const getMemberRole = createAsyncThunk(
       url: `/v1/admin/get-user-role/${data?.user_id}`,
       method: "POST",
       data: data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response;
+  }
+);
+
+export const deleteMember = createAsyncThunk(
+  "admin/remove-organisation-member",
+  async (data: any) => {
+    const response = axiosMiddleware.request({
+      url: `/v1/admin/remove-organisation-member/${data}`,
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
