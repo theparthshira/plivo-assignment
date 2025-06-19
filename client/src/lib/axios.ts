@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = `http://${import.meta.env.VITE_CLERK_BASE_URL}`;
+const BASE_URL = `https://${import.meta.env.VITE_CLERK_BASE_URL}`;
 
 const generalMiddleware = axios.create({
   baseURL: BASE_URL,
