@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button } from "../../components/ui/button";
-import { Activity, User, Menu, X, Clipboard } from "lucide-react";
+import { User, Menu, X, Clipboard } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import {
   Select,

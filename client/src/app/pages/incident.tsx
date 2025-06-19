@@ -31,8 +31,8 @@ const Incident = () => {
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    const service_id = queryParams.get("service") || "0";
-    const org_id = queryParams.get("org") || "0";
+    // const service_id = queryParams.get("service") || "0";
+    // const org_id = queryParams.get("org") || "0";
     const incident_id = queryParams.get("incident") || "0";
 
     dispatch(getIncidentDetail(incident_id));

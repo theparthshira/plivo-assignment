@@ -11,7 +11,6 @@ import {
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../lib/reduxHook";
 import { getServices } from "../../redux/service";
-import { useNavigate } from "react-router";
 import { getOrganisation } from "../../redux/organisation";
 import IncidentForm from "../../components/dashboard/incidents/IncidentForm";
 import { Button } from "../../components/ui/button";
@@ -21,7 +20,6 @@ import type { ServiceKey, StatusKey } from "../../utils/constant";
 
 export default function ClientHome() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const {
     messages: socketMessages,
     connectWebSocket,
