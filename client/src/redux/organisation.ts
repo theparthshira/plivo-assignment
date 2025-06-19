@@ -66,12 +66,7 @@ export const UserSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(createOrganisation.fulfilled, (state, action) => {
-      console.log("state, action =====", state, action);
-    });
     builder.addCase(getOrganisation.fulfilled, (state, action) => {
-      console.log("state, sdfsdaction =====", state, action);
-
       state.currentOrganisation = action.payload.data;
     });
   },

@@ -20,13 +20,8 @@ import (
 
 func main() {
 	godotenv.Load()
-	mysqlDSN := "root:admin@tcp(127.0.0.1:3306)/plivo_status?parseTime=true"
-	// mysqlDSN := os.Getenv("MYSQL_DSN")
-	if mysqlDSN == "" {
-		log.Fatal("MYSQL_DSN environment variable not set. Please provide database connection string.")
-	}
 
-	DB, err := db.InitDB(mysqlDSN)
+	DB, err := db.InitDB()
 
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -55,7 +50,7 @@ func main() {
 
 	// Configure the HTTP server
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":" + os.Getenv("PORT"),
 		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

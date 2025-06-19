@@ -16,8 +16,8 @@ func RegisterClientAPIRoutes(router *mux.Router, db *sql.DB) {
 	incidentHandler := handlers.NewIncidentHandler(incidentService)
 
 	openRouter.HandleFunc("/add-new-incident", incidentHandler.AddServiceIncidentHandler).Methods("POST")
-	openRouter.HandleFunc("/add-incident-comment", incidentHandler.AddIncidentCommentHandler).Methods("POST")       // add socket maybe
-	openRouter.HandleFunc("/get-incident/{id}", incidentHandler.GetIncidentsFromServiceIDHandler).Methods("GET")    // add socket maybe
-	openRouter.HandleFunc("/get-incident-detail/{id}", incidentHandler.GetIncidentDetailHandler).Methods("GET")     // add socket maybe
-	openRouter.HandleFunc("/get-incident-comments/{id}", incidentHandler.GetIncidentCommentsHandler).Methods("GET") // add socket maybe
+	openRouter.HandleFunc("/add-incident-comment", incidentHandler.AddIncidentCommentHandler).Methods("POST")
+	openRouter.HandleFunc("/get-incident/{id}", incidentHandler.GetIncidentsFromServiceIDHandler).Methods("GET")
+	openRouter.HandleFunc("/get-incident-detail/{id}", incidentHandler.GetIncidentDetailHandler).Methods("GET")
+	openRouter.HandleFunc("/get-incident-comments/{id}", incidentHandler.GetIncidentCommentsHandler).Methods("GET")
 }

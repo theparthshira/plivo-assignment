@@ -37,7 +37,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       return;
     }
 
-    const url = `ws://localhost:8080/ws/${id}`;
+    const url = `ws://${import.meta.env.VITE_CLERK_BASE_URL}/ws/${id}`;
     wsRef.current = new WebSocket(url);
 
     wsRef.current.onopen = () => {

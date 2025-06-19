@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "../../../components/ui/button";
-import { Settings as SettingsIcon, Users } from "lucide-react";
 import { settingsMenuItems } from "../../../utils/constant";
 import GeneralSetting from "./General";
 import TeamSetting from "./Team";

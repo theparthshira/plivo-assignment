@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosMiddleware from "../lib/axios";
-import type { MembersList } from "../types/organisation";
 import type { IIncident, IIncidentComment } from "../types/incident";
 
 export const addIncident = createAsyncThunk(

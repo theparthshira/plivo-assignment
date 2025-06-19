@@ -31,7 +31,7 @@ import {
 import { useAppDispatch, useAppSelector } from "../../../lib/reduxHook";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { addIncident, getAllIncidents } from "../../../redux/incident";
+import { getAllIncidents } from "../../../redux/incident";
 import { TEAM_ROLE } from "../../../utils/constant";
 import { addMember } from "../../../redux/member";
 

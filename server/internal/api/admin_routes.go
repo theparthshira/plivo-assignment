@@ -3,6 +3,7 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -29,6 +30,10 @@ func RegisterAdminAPIRoutes(router *mux.Router, db *sql.DB, wsManager *socket.Ma
 
 	incidentService := service.NewMySQLIncidentService(db)
 	incidentHandler := handlers.NewIncidentHandler(incidentService)
+
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Welcome to the home page!")
+	})
 
 	router.HandleFunc("/ws/{orgID}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -57,7 +62,7 @@ func RegisterAdminAPIRoutes(router *mux.Router, db *sql.DB, wsManager *socket.Ma
 	authenticatedRouter.HandleFunc("/add-maintenance", serviceHandler.AddServiceMaintenanceHandler).Methods("POST")
 	authenticatedRouter.HandleFunc("/delete-maintenance/{id}", serviceHandler.DeleteServiceMaintenanceHandler).Methods("DELETE")
 
-	authenticatedRouter.HandleFunc("/add-organisation-member", memberHandler.AddOrganisationMemberHandler).Methods("POST") // send email
+	authenticatedRouter.HandleFunc("/add-organisation-member", memberHandler.AddOrganisationMemberHandler).Methods("POST")
 	authenticatedRouter.HandleFunc("/get-organisation-members/{id}", memberHandler.GetOrganisationMembersHandler).Methods("GET")
 	authenticatedRouter.HandleFunc("/remove-organisation-member/{id}", memberHandler.RemoveOrganisationMemberHandler).Methods("DELETE")
 
