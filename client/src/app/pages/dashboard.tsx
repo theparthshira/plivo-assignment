@@ -172,7 +172,7 @@ const Dashboard = () => {
                       className="text-gray-700"
                       onClick={() =>
                         navigator.clipboard.writeText(
-                          `http://localhost:5173/client/home?org=${currentOrganisation?.id}`
+                          `https://plivo-assign.netlify.app/client/home?org=${currentOrganisation?.id}`
                         )
                       }
                     />
